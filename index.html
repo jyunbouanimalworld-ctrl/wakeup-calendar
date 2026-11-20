@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#16834a">
   <link rel="manifest" href="./manifest.json">
-  <title>起床時間カレンダー（オフライン版）</title>
+  <title>起床時間カレンダー（オフライン対応）</title>
   <style>
     :root { color-scheme: light; --green:#16834a; --line:#e5e7eb; --muted:#667085; }
     * { box-sizing:border-box; }
@@ -51,6 +51,8 @@
   <header>
     <h1>起床時間カレンダー</h1>
     <div class="header-actions">
+      <button class="secondary" id="pullSheet">スプシから取得</button>
+      <button class="secondary" id="pushSheet">スプシへ送信</button>
       <button class="secondary" id="exportCsv">CSV書き出し</button>
       <button class="secondary" id="importCsvBtn">CSV読み込み</button>
       <input type="file" id="importCsvFile" accept=".csv,text/csv" hidden>
@@ -86,6 +88,8 @@
 
 <script>
   const STORAGE_KEY = 'wake_calendar_records_v1';
+  // ★ここにGASのウェブアプリURL（.../exec）を貼り付けてください
+  const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyUbWAFdF4ZGxa2wAHJ30RctM52VCToiA0XF1oAc8r_u4pRM9YKa4s62uPQdSIcgvTo/exec';
 
   let records = {};
   let selected = new Date();
@@ -215,6 +219,71 @@
     setStatus('記録を削除しました。');
   }
 
+  function ensureGasUrl() {
+    if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('ここにGASの')) {
+      setStatus('先に index.html の GAS_WEB_APP_URL を設定してください。', true);
+      return false;
+    }
+    if (!navigator.onLine) {
+      setStatus('オフライン中です。ネット接続後に同期ボタンを押してください。', true);
+      return false;
+    }
+    return true;
+  }
+
+  function setSyncBusy(busy) {
+    ['pullSheet', 'pushSheet', 'save', 'remove', 'exportCsv', 'importCsvBtn'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = busy;
+    });
+  }
+
+  async function pullFromSheet() {
+    if (!ensureGasUrl()) return;
+    setSyncBusy(true);
+    setStatus('スプレッドシートから取得中…');
+    try {
+      const res = await fetch(`${GAS_WEB_APP_URL}?action=get`, { method: 'GET' });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || '取得に失敗しました');
+
+      records = data.records || {};
+      persistRecords();
+      render();
+      setStatus('スプレッドシートから記録を取得しました。');
+    } catch (err) {
+      setStatus('取得エラー：' + (err.message || err), true);
+    } finally {
+      setSyncBusy(false);
+    }
+  }
+
+  async function pushToSheet() {
+    if (!ensureGasUrl()) return;
+    setSyncBusy(true);
+    setStatus('スプレッドシートへ送信中…');
+    try {
+      const res = await fetch(GAS_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'sync', records })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || '送信に失敗しました');
+
+      if (data.records) {
+        records = data.records;
+        persistRecords();
+        render();
+      }
+      setStatus(data.message || 'スプレッドシートへ送信しました。');
+    } catch (err) {
+      setStatus('送信エラー：' + (err.message || err), true);
+    } finally {
+      setSyncBusy(false);
+    }
+  }
+
   function exportCsv() {
     const keys = Object.keys(records).sort();
     const lines = ['日付,起床時刻', ...keys.map(k => `${k},${records[k]}`)];
@@ -266,6 +335,8 @@
   });
   document.getElementById('save').addEventListener('click', save);
   document.getElementById('remove').addEventListener('click', remove);
+  document.getElementById('pullSheet').addEventListener('click', pullFromSheet);
+  document.getElementById('pushSheet').addEventListener('click', pushToSheet);
   document.getElementById('exportCsv').addEventListener('click', exportCsv);
 
   const importInput = document.getElementById('importCsvFile');

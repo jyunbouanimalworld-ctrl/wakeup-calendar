@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wake-calendar-v2';
+const CACHE_NAME = 'wake-calendar-v1';
 const ASSETS = [
   './',
   './index.html',

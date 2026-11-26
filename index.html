@@ -31,7 +31,7 @@
     .day.today .num { font-weight:800; text-decoration:underline; text-decoration-color:#8ab99b; }
     .num { font-size:13px; }
     .time-chip { font-size:11px; font-weight:750; color:#137443; background:#e6f4eb; border-radius:7px; padding:3px 5px; white-space:nowrap; }
-    .stat-card { border:1px solid #edf0ee; background:#fafcfb; border-radius:12px; padding:12px 14px; margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .stat-card { border:1px solid #edf0ee; background:#fafcfb; border-radius:12px; padding:12px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
     .stat-label { font-size:13px; color:var(--muted); }
     .stat-right { display:flex; align-items:baseline; gap:8px; }
     .stat-value { font-size:18px; font-weight:750; color:#145c36; }
@@ -71,10 +71,6 @@
         <button id="next" aria-label="次の月">›</button>
       </div>
     </div>
-    <div class="week">
-      <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
-    </div>
-    <div class="calendar" id="calendar"></div>
 
     <div class="stat-card" aria-label="月ごとの平均起床時間">
       <div class="stat-label" id="monthAvgLabel">今月の平均起床時間</div>
@@ -83,6 +79,11 @@
         <span class="stat-sub" id="monthAvgCount">記録 0日</span>
       </div>
     </div>
+
+    <div class="week">
+      <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+    </div>
+    <div class="calendar" id="calendar"></div>
 
     <div class="editor">
       <h2 id="selectedLabel">日付を選択</h2>
